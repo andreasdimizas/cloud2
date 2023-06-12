@@ -1,0 +1,49 @@
+version: '3'
+services:
+  zola:
+    build:
+      context: ./
+      dockerfile: dockerfile
+    working_dir: /myblog
+    command: sh -c "zola build"
+    volumes:
+      - ./myblog:/myblog/
+    networks:
+      - my-network
+
+  yt-local:
+    build:
+      context: ./
+      dockerfile: yt.dockerfile
+    working_dir: /youtube-local
+    command: sh -c "python3 server.py"
+    ports:
+      - "0.0.0.0:8080:8080"
+    networks:
+      - my-network
+
+  nginx:
+    image: nginx
+    depends_on: 
+      - zola
+      - yt-local
+    ports:
+      - "80:80"
+    volumes:
+      - ./myblog/public:/usr/share/nginx/html
+      - ./site.conf:/etc/nginx/conf.d
+    env_file:
+      - .env
+    command: /bin/bash -c "envsubst < /etc/nginx/conf.d/site1.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+    networks:
+      - my-network
+                                          
+volumes:
+  myblog:
+  public:
+  site.conf:
+
+networks:
+  my-network:
+
+
